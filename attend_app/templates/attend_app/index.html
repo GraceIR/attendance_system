@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System</title>
+    <!-- Bootstrap 5 + Icons + Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .container {
+            max-width: 1300px;
+            flex: 1;
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            border-radius: 16px 16px 0 0 !important;
+        }
+        .card-header i {
+            margin-right: 8px;
+            color: #2a5298;
+        }
+        .btn-primary {
+            background: #2a5298;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: #1e3c72;
+            transform: translateY(-1px);
+        }
+        .btn-success {
+            background: #28a745;
+            border: none;
+        }
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        .table tbody tr:hover {
+            background-color: #f1f3f5;
+        }
+        .badge {
+            font-weight: 500;
+            padding: 0.4em 0.8em;
+            border-radius: 30px;
+        }
+        .badge.bg-danger {
+            background: #dc3545 !important;
+        }
+        .badge.bg-success {
+            background: #28a745 !important;
+        }
+        .btn-sm {
+            border-radius: 8px;
+            padding: 0.3rem 0.7rem;
+            margin: 0 2px;
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn-info:hover {
+            background: #138496;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 5px;
+        }
+        .loading-spinner {
+            display: inline-block;
+            margin-left: 10px;
+        }
+        #message-area {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            min-width: 250px;
+        }
+        .alert {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            backdrop-filter: blur(4px);
+        }
+        /* Footer styling matching the header gradient */
+        footer {
+            background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            text-align: center;
+            padding: 1.2rem 0;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        footer a {
+            color: #f8f9fa;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .card-header {
+                flex-direction: column;
+                align-items: start !important;
+                gap: 10px;
+            }
+            .d-flex.gap-2 {
+                width: 100%;
+            }
+            .table-responsive {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar navbar-dark">
+    <div class="container">
+        <span class="navbar-brand">
+            <i class="fas fa-clock me-2"></i> Attendance System
+        </span>
+        <span class="navbar-text text-white">
+            <i class="fas fa-calendar-alt me-1"></i> {{ today|date:"l, F j, Y" }}
+        </span>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Floating messages -->
+    <div id="message-area"></div>
+
+    <!-- Mark Attendance Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <i class="fas fa-user-check"></i> Mark Attendance
+        </div>
+        <div class="card-body">
+            <form id="attendanceForm">
+                {% csrf_token %}
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="id_worker" class="form-label fw-semibold">Worker</label>
+                        {{ form.worker }}
+                    </div>
+                    <div class="col-md-5">
+                        <label for="id_signature" class="form-label fw-semibold">Signature / Name</label>
+                        {{ form.signature }}
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-fingerprint me-1"></i> Check In
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attendance Records Card -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-list-alt"></i> Attendance Records
+            </div>
+            <div class="d-flex gap-2">
+                <input type="date" id="datePicker" class="form-control form-control-sm" value="{{ today|date:'Y-m-d' }}">
+                <button id="exportBtn" class="btn btn-sm btn-info">
+                    <i class="fas fa-file-csv me-1"></i> Export CSV
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>S/N</th>
+                            <th>Worker Name</th>
+                            <th>Check-in Time</th>
+                            <th>Signature</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2 text-muted">Loading attendance...</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer with matching gradient -->
+<footer>
+    <div class="container">
+        &copy; {% now "Y" %} Attendance System. All rights reserved.
+    </div>
+</footer>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Attendance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <div class="mb-3">
+                        <label for="editWorker" class="form-label">Worker</label>
+                        <input type="text" id="editWorker" class="form-control" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTime" class="form-label">Check-in Time</label>
+                        <input type="time" id="editTime" class="form-control" step="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSignature" class="form-label">Signature</label>
+                        <input type="text" id="editSignature" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveEditBtn">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Helper to get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Show loading spinner in table
+    function showLoading() {
+        const tbody = document.getElementById('attendanceTableBody');
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-2 text-muted">Loading attendance...</span>
+        </td></tr>`;
+    }
+
+    // Load attendance for a given date
+    function loadAttendance(date) {
+        showLoading();
+        fetch(`/attendance-data/?date=${date}`)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('attendanceTableBody');
+                tbody.innerHTML = '';
+                if (data.attendances.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="fas fa-info-circle me-2"></i>No attendance records for this day.</td></tr>';
+                    return;
+                }
+                data.attendances.forEach(att => {
+                    const row = document.createElement('tr');
+                    row.dataset.id = att.id;
+                    const statusBadge = att.late ? '<span class="badge bg-danger"><i class="fas fa-clock me-1"></i>Late</span>' : '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>On Time</span>';
+                    row.innerHTML = `
+                        <td>${att.serial}</td>
+                        <td><i class="fas fa-user-circle me-2 text-secondary"></i>${escapeHtml(att.worker_name)}</td>
+                        <td><i class="far fa-clock me-2 text-secondary"></i>${att.check_in_time}</td>
+                        <td><i class="fas fa-pen me-2 text-secondary"></i>${escapeHtml(att.signature)}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${att.id}"><i class="fas fa-edit"></i> Edit</button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${att.id}"><i class="fas fa-trash-alt"></i> Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                // Attach event listeners to new buttons
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', () => openEditModal(btn.dataset.id));
+                });
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', () => deleteAttendance(btn.dataset.id));
+                });
+            })
+            .catch(error => {
+                console.error('Error loading attendance:', error);
+                const tbody = document.getElementById('attendanceTableBody');
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle me-2"></i>Failed to load data. Please refresh.</td></tr>';
+            });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function showMessage(message, type) {
+        const msgDiv = document.getElementById('message-area');
+        const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+        msgDiv.innerHTML = `<div class="alert ${alertClass} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'} me-2"></i>${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`;
+        setTimeout(() => {
+            const alert = msgDiv.querySelector('.alert');
+            if (alert) alert.remove();
+        }, 4000);
+    }
+
+    // Submit attendance via AJAX
+    document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        submitBtn.disabled = true;
+
+        const formData = new FormData(this);
+        fetch('', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message, 'success');
+                const currentDate = document.getElementById('datePicker').value;
+                loadAttendance(currentDate);
+                document.getElementById('id_signature').value = '';
+            } else {
+                showMessage(data.message || 'Error recording attendance', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('An error occurred', 'error');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    // Delete attendance
+    function deleteAttendance(id) {
+        if (!confirm('Are you sure you want to delete this attendance record?')) return;
+        fetch(`/delete/${id}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'deleted') {
+                showMessage('Attendance deleted successfully', 'success');
+                const currentDate = document.getElementById('datePicker').value;
+                loadAttendance(currentDate);
+            } else {
+                showMessage('Error deleting record', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('An error occurred', 'error');
+        });
+    }
+
+    // Open edit modal and load record data
+    function openEditModal(id) {
+        fetch(`/edit/${id}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editId').value = data.id;
+                document.getElementById('editWorker').value = data.worker_name;
+                let timeValue = data.check_in_time.slice(0,5);
+                document.getElementById('editTime').value = timeValue;
+                document.getElementById('editSignature').value = data.signature;
+                const modal = new bootstrap.Modal(document.getElementById('editModal'));
+                modal.show();
+            })
+            .catch(error => console.error('Error loading record:', error));
+    }
+
+    // Save edited record
+    document.getElementById('saveEditBtn').addEventListener('click', function() {
+        const id = document.getElementById('editId').value;
+        const check_in_time = document.getElementById('editTime').value;
+        const signature = document.getElementById('editSignature').value;
+        const saveBtn = this;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        saveBtn.disabled = true;
+
+        fetch(`/edit/${id}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({ check_in_time: check_in_time, signature: signature })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'updated') {
+                showMessage('Attendance updated successfully', 'success');
+                const currentDate = document.getElementById('datePicker').value;
+                loadAttendance(currentDate);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+                modal.hide();
+            } else {
+                showMessage(data.message || 'Error updating record', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('An error occurred', 'error');
+        })
+        .finally(() => {
+            saveBtn.innerHTML = 'Save changes';
+            saveBtn.disabled = false;
+        });
+    });
+
+    // Date picker change
+    document.getElementById('datePicker').addEventListener('change', function() {
+        loadAttendance(this.value);
+    });
+
+    // Export CSV
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        const date = document.getElementById('datePicker').value;
+        window.location.href = `/export-csv/?date=${date}`;
+    });
+
+    // Initial load
+    loadAttendance(document.getElementById('datePicker').value);
+</script>
+</body>
+</html>
